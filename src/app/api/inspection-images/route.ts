@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { inspectionId, imageUrl, aiAnalysis, detectedIssues } = body
+    const { inspectionId, imageUrl, aiAnalysis, detectedIssues, queenDetected } = body
 
     if (!inspectionId || !imageUrl) {
       return NextResponse.json({ error: 'ID inspekcije in URL slike sta obvezna' }, { status: 400 })
@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
         inspectionId,
         imageUrl,
         aiAnalysis: aiAnalysis ? JSON.stringify(aiAnalysis) : null,
-        detectedIssues: detectedIssues ? JSON.stringify(detectedIssues) : null
+        detectedIssues: detectedIssues ? JSON.stringify(detectedIssues) : null,
+        queenDetected: queenDetected || null
       }
     })
 

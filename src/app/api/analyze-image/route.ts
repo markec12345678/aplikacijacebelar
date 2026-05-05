@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
 
     const zai = await ZAI.create()
 
-    // Sestavimo prompt glede na to, kaj želimo analizirati
     let prompt = `Analiziraj to sliko čebeljega panja in podaj podrobno oceno. Odgovor mora biti v slovenščini in v JSON formatu s sledečo strukturo:
 {
   "overallHealth": "ODLIČNO | DOBRO | SREDNJE | SLABO | KRITIČNO",
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       "vrstica čebel"
     ],
     "eggCellsVisible": true/false,
-    "broodPattern": "DOBR vzorec legla | SLAB vzorec legla | BREZ legla"
+    "broodPattern": "DOBER VZOREC LEGLA | SLAB VZOREC LEGLA | BREZ LEGLA"
   }`
     } else {
       prompt += `,
@@ -63,16 +62,22 @@ export async function POST(request: NextRequest) {
 
 Pozorno preglej sliko in iskaj:
 ${analyzeDiseases ? `- Znake bolezni (varroa, nosež, afrikanizirane čebele, glistačnost, itd.)` : ''}
-- Stanje čebel (število, aktivnost)
-${analyzeQueen ? `
-- PRISOTNOST MATICE:
-  * Išči večjo čebelo z razločnim telesom
-  * Išči čebele, ki se obnašajo občutljivo ali so sicer obrobljene
+${analyzeQueen ? `- PRISOTNOST MATICE:
+  * Išči večjo čebelo z razločnim telesom (matička je večja od delavk)
+  * Išči čebele, ki se obnašajo občutljivo ali so drugače obrobljene kot delavke
   * Išči obroč ali vzorec čebel, ki je lahko okoli matice
   * Išči znake razlegelih celic (jajčeca)
-  * Ocenjaj, ali je vzorec legla pravilen` : ''}
+  * Ocenjaj, ali je vzorec legla pravilen
+  * Matička je lahko brez oznak oz. se obnaša drugače od drugih čebel` : ''}
+- Stanje čebel (število, aktivnost)
 - Stanje okvirov (čista, umazana, z medom, z leglom)
 - Katerikoli drug vidik, ki je pomemben za zdravje čebel
+
+POMEMBNI VAJNOSTI:
+- Matička (kraljica) je VELJA in razločna od delavk
+- Okoli matičke je pogosto obroč čebel
+- Razlegle celice (jajčeca) so okrogle v obročih, ne v razmajanih vzorcih
+- Prisotnost matičke kaže zdrav in aktiven panj
 `
 
     const response = await zai.chat.completions.createVision({
