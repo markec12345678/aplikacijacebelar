@@ -5,8 +5,7 @@ import {
   Plus, Beaker, Search, AlertTriangle, Calendar, MapPin,
   Camera, X, ChevronLeft, ChevronRight, Loader2, Brain,
   Activity, TrendingUp, ShieldCheck, AlertOctagon,
-  Crown, Scale, Share2, Bell, BarChart3,
-  RefreshCw, Database, Weight, Thermometer, Droplets
+  Crown, Scale, BarChart3, RefreshCw, Database, Weight, Thermometer, Droplets
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -1081,14 +1080,17 @@ export default function BeekeeperApp() {
                                     alt={`Inspekcijska slika ${idx + 1}`}
                                     className="w-full h-full object-cover"
                                   />
-                                  {image.queenDetected && (
+                                  {image.detectedIssues && (
                                     <div className="absolute top-2 right-2">
-                                      <Crown className="w-6 h-6 text-amber-500" />
+                                      <AlertOctagon className="w-6 h-6 text-red-500" />
                                     </div>
                                   )}
-                                  {image.detectedIssues && (
-                                    <div className="absolute top-2 right-8">
-                                      <AlertOctagon className="w-6 h-6 text-red-500" />
+                                  {image.queenDetected && (
+                                    <div className="absolute bottom-2 left-2">
+                                      <Badge className="text-xs">
+                                        <Crown className="w-3 h-3 mr-1" />
+                                        Matica
+                                      </Badge>
                                     </div>
                                   )}
                                 </div>
@@ -1110,22 +1112,19 @@ export default function BeekeeperApp() {
                               return (
                                 <div key={image.id} className="text-sm space-y-1">
                                   <p><strong>Zdravje:</strong> {analysis.overallHealth || 'N/A'}</p>
-                                  {analysis.queenAnalysis && (
-                                    <p>
-                                      <strong>Matica:</strong>{' '}
-                                      {analysis.queenAnalysis.queenSpotted ? (
-                                        <span className="text-green-600">Opažena ✓</span>
-                                      ) : (
-                                        <span className="text-muted-foreground">Ni opažena</span>
-                                      )}
-                                      {analysis.queenAnalysis.queenHealth && ` (${analysis.queenAnalysis.queenHealth})`}
-                                    </p>
-                                  )}
-                                  {analysis.queenAnalysis?.broodPattern && (
-                                    <p><strong>Vzorec legla:</strong> {analysis.queenAnalysis.broodPattern}</p>
-                                  )}
                                   {analysis.summary && (
                                     <p className="text-muted-foreground">{analysis.summary}</p>
+                                  )}
+                                  {analysis.queenAnalysis && (
+                                    <div className="mt-2 p-2 bg-background rounded">
+                                      <p><strong>Matica:</strong> {analysis.queenAnalysis.queenSpotted ? 'Zaznana' : 'Nezaznana'}</p>
+                                      {analysis.queenAnalysis.queenSpotted && (
+                                        <>
+                                          <p><strong>Lokacija:</strong> {analysis.queenAnalysis.queenLocation}</p>
+                                          <p><strong>Zdravje:</strong> {analysis.queenAnalysis.queenHealth}</p>
+                                        </>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               )
@@ -1216,8 +1215,8 @@ export default function BeekeeperApp() {
       <Dialog open={showAddScaleDialog} onOpenChange={setShowAddScaleDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dodaj tehtnico</DialogTitle>
-            <DialogDescription>Vnesite informacije o tehtnici</DialogDescription>
+            <DialogTitle>Dodaj novo tehtnico</DialogTitle>
+            <DialogDescription>Vnesite informacije o novi daljinski tehtnici</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -1239,39 +1238,38 @@ export default function BeekeeperApp() {
               />
             </div>
             <div>
-              <Label htmlFor="scaleHive">Panj (povezava)</Label>
+              <Label htmlFor="scaleHive">Povezani panj</Label>
               <Select value={newScale.hiveId} onValueChange={(v) => setNewScale({ ...newScale, hiveId: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Izberi panj..." />
+                  <SelectValue placeholder="Izberite panj (opcijsko)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Brez povezave</SelectItem>
-                  {hives.map(hive => (
-                    <SelectItem key={hive.id} value={hive.id}>{hive.name}</SelectItem>
+                  {hives.map((hive) => (
+                    <SelectItem key={hive.id} value={hive.id}>
+                      {hive.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="ipAddress">IP naslov</Label>
-                <Input
-                  id="ipAddress"
-                  placeholder="192.168.1.100"
-                  value={newScale.ipAddress}
-                  onChange={(e) => setNewScale({ ...newScale, ipAddress: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="port">Vrata</Label>
-                <Input
-                  id="port"
-                  type="number"
-                  placeholder="80"
-                  value={newScale.port}
-                  onChange={(e) => setNewScale({ ...newScale, port: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label htmlFor="ipAddress">IP naslov</Label>
+              <Input
+                id="ipAddress"
+                placeholder="Npr. 192.168.1.100"
+                value={newScale.ipAddress}
+                onChange={(e) => setNewScale({ ...newScale, ipAddress: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="port">Vrata</Label>
+              <Input
+                id="port"
+                type="number"
+                placeholder="Npr. 80"
+                value={newScale.port}
+                onChange={(e) => setNewScale({ ...newScale, port: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -1388,62 +1386,32 @@ export default function BeekeeperApp() {
                           </div>
                         </div>
 
-                        {/* Queen Analysis */}
                         {aiAnalysis.queenAnalysis && (
-                          <div className="border-t pt-3 mt-3">
+                          <div className="bg-background p-3 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                               <Crown className="w-5 h-5 text-amber-600" />
                               <h5 className="font-medium">Analiza matice</h5>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
-                                <span className="text-muted-foreground">Matica:</span>
-                                <Badge 
-                                  className="ml-2"
-                                  variant={aiAnalysis.queenAnalysis.queenSpotted ? 'default' : 'secondary'}
-                                >
-                                  {aiAnalysis.queenAnalysis.queenSpotted ? 'Opažena' : 'Ni opažena'}
+                                <span className="text-muted-foreground">Zaznana:</span>
+                                <Badge className="ml-2" variant={aiAnalysis.queenAnalysis.queenSpotted ? 'default' : 'secondary'}>
+                                  {aiAnalysis.queenAnalysis.queenSpotted ? 'Da' : 'Ne'}
                                 </Badge>
                               </div>
-                              {aiAnalysis.queenAnalysis.queenHealth && (
-                                <div>
-                                  <span className="text-muted-foreground">Zdravje:</span>
-                                  <Badge className="ml-2" variant="outline">
-                                    {aiAnalysis.queenAnalysis.queenHealth}
-                                  </Badge>
-                                </div>
+                              {aiAnalysis.queenAnalysis.queenSpotted && (
+                                <>
+                                  <div>
+                                    <span className="text-muted-foreground">Lokacija:</span>
+                                    <span className="ml-2 font-medium">{aiAnalysis.queenAnalysis.queenLocation}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Zdravje:</span>
+                                    <span className="ml-2 font-medium">{aiAnalysis.queenAnalysis.queenHealth}</span>
+                                  </div>
+                                </>
                               )}
                             </div>
-                            {aiAnalysis.queenAnalysis.queenLocation && (
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Lokacija:</span>
-                                <span className="ml-2">{aiAnalysis.queenAnalysis.queenLocation}</span>
-                              </div>
-                            )}
-                            {aiAnalysis.queenAnalysis.eggCellsVisible !== undefined && (
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Jajčeca:</span>
-                                <span className="ml-2">
-                                  {aiAnalysis.queenAnalysis.eggCellsVisible ? 'Vidna' : 'Ni vidnih'}
-                                </span>
-                              </div>
-                            )}
-                            {aiAnalysis.queenAnalysis.broodPattern && (
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Vzorec legla:</span>
-                                <span className="ml-2">{aiAnalysis.queenAnalysis.broodPattern}</span>
-                              </div>
-                            )}
-                            {aiAnalysis.queenAnalysis.queenPattern && aiAnalysis.queenAnalysis.queenPattern.length > 0 && (
-                              <div className="text-sm">
-                                <span className="text-muted-foreground">Značilnosti:</span>
-                                <ul className="ml-2 mt-1 space-y-1">
-                                  {aiAnalysis.queenAnalysis.queenPattern.map((p: string, i: number) => (
-                                    <li key={i}>• {p}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
                           </div>
                         )}
 
@@ -1510,13 +1478,6 @@ export default function BeekeeperApp() {
                             </ul>
                           </div>
                         )}
-
-                        {aiAnalysis.summary && (
-                          <div className="bg-white dark:bg-slate-950 p-3 rounded border">
-                            <h5 className="font-medium mb-1">Povzetek</h5>
-                            <p className="text-sm text-muted-foreground">{aiAnalysis.summary}</p>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -1525,100 +1486,87 @@ export default function BeekeeperApp() {
             </div>
 
             {/* Inspection Form */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="beeHealth">Zdravje čebel</Label>
-                <select
-                  id="beeHealth"
-                  className="w-full mt-1.5 px-3 py-2 border rounded-md bg-background"
-                  value={newInspection.beeHealth}
-                  onChange={(e) => setNewInspection({ ...newInspection, beeHealth: e.target.value })}
-                >
-                  <option value="EXCELLENT">Odlično</option>
-                  <option value="GOOD">Dobro</option>
-                  <option value="FAIR">Srednje</option>
-                  <option value="POOR">Slabo</option>
-                  <option value="CRITICAL">Kritično</option>
-                </select>
+                <Select value={newInspection.beeHealth} onValueChange={(v) => setNewInspection({ ...newInspection, beeHealth: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EXCELLENT">Odlično</SelectItem>
+                    <SelectItem value="GOOD">Dobro</SelectItem>
+                    <SelectItem value="FAIR">Srednje</SelectItem>
+                    <SelectItem value="POOR">Slabo</SelectItem>
+                    <SelectItem value="CRITICAL">Kritično</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              <div className="flex items-center gap-3">
-                <Label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newInspection.queenSpotted}
-                    onChange={(e) => setNewInspection({ ...newInspection, queenSpotted: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  <span className="flex items-center gap-2">
-                    <Crown className="w-5 h-5" />
-                    Matica opažena
-                  </span>
-                </Label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="beePopulation">Populacija</Label>
-                  <Input
-                    id="beePopulation"
-                    type="number"
-                    placeholder="Število"
-                    value={newInspection.beePopulation}
-                    onChange={(e) => setNewInspection({ ...newInspection, beePopulation: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="broodFrames">Leglo (okvirji)</Label>
-                  <Input
-                    id="broodFrames"
-                    type="number"
-                    placeholder="Št. okvirov"
-                    value={newInspection.broodFrames}
-                    onChange={(e) => setNewInspection({ ...newInspection, broodFrames: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="honeyFrames">Med (okvirji)</Label>
-                  <Input
-                    id="honeyFrames"
-                    type="number"
-                    placeholder="Št. okvirov"
-                    value={newInspection.honeyFrames}
-                    onChange={(e) => setNewInspection({ ...newInspection, honeyFrames: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pollenFrames">Prah (okvirji)</Label>
-                  <Input
-                    id="pollenFrames"
-                    type="number"
-                    placeholder="Št. okvirov"
-                    value={newInspection.pollenFrames}
-                    onChange={(e) => setNewInspection({ ...newInspection, pollenFrames: e.target.value })}
-                  />
-                </div>
-              </div>
-
               <div>
-                <Label htmlFor="notes">Opombe</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Dodatne opombe o inspekciji..."
-                  value={newInspection.notes}
-                  onChange={(e) => setNewInspection({ ...newInspection, notes: e.target.value })}
+                <Label htmlFor="beePopulation">Populacija čebel</Label>
+                <Input
+                  id="beePopulation"
+                  type="number"
+                  placeholder="Npr. 50000"
+                  value={newInspection.beePopulation}
+                  onChange={(e) => setNewInspection({ ...newInspection, beePopulation: e.target.value })}
                 />
               </div>
+              <div>
+                <Label htmlFor="broodFrames">Leglo (okviri)</Label>
+                <Input
+                  id="broodFrames"
+                  type="number"
+                  placeholder="Npr. 8"
+                  value={newInspection.broodFrames}
+                  onChange={(e) => setNewInspection({ ...newInspection, broodFrames: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="honeyFrames">Med (okviri)</Label>
+                <Input
+                  id="honeyFrames"
+                  type="number"
+                  placeholder="Npr. 10"
+                  value={newInspection.honeyFrames}
+                  onChange={(e) => setNewInspection({ ...newInspection, honeyFrames: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="pollenFrames">Prah (okviri)</Label>
+                <Input
+                  id="pollenFrames"
+                  type="number"
+                  placeholder="Npr. 4"
+                  value={newInspection.pollenFrames}
+                  onChange={(e) => setNewInspection({ ...newInspection, pollenFrames: e.target.value })}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="queenSpotted"
+                  checked={newInspection.queenSpotted}
+                  onChange={(e) => setNewInspection({ ...newInspection, queenSpotted: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="queenSpotted" className="mb-0">Zaznana matica</Label>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Opombe</Label>
+              <Textarea
+                id="notes"
+                placeholder="Dodatne informacije o inspekciji..."
+                value={newInspection.notes}
+                onChange={(e) => setNewInspection({ ...newInspection, notes: e.target.value })}
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowInspectionDialog(false)
-              stopCamera()
-              setCapturedImage(null)
-              setAiAnalysis(null)
-            }}>
+            <Button variant="outline" onClick={() => setShowInspectionDialog(false)}>
               Prekliči
             </Button>
             <Button onClick={handleAddInspection}>Shrani inspekcijo</Button>
@@ -1627,68 +1575,78 @@ export default function BeekeeperApp() {
       </Dialog>
 
       {/* Image Viewer Dialog */}
-      {selectedInspection && (
+      {selectedInspection && selectedInspection.images.length > 0 && (
         <Dialog open={!!selectedInspection} onOpenChange={() => setSelectedInspection(null)}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Slike inspekcije</DialogTitle>
+              <DialogTitle>Slika inspekcije</DialogTitle>
               <DialogDescription>
                 {new Date(selectedInspection.date).toLocaleDateString('sl-SI')}
               </DialogDescription>
             </DialogHeader>
-
             <div className="space-y-4">
-              {selectedInspection.images[currentImageIndex] && (
-                <>
-                  <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-                    <img
-                      src={selectedInspection.images[currentImageIndex].imageUrl}
-                      alt={`Slika ${currentImageIndex + 1}`}
-                      className="w-full h-full object-contain"
-                    />
+              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={selectedInspection.images[currentImageIndex].imageUrl}
+                  alt="Inspekcijska slika"
+                  className="w-full h-full object-contain"
+                />
+                {selectedInspection.images.length > 1 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2"
+                      onClick={() => setCurrentImageIndex((i) => i > 0 ? i - 1 : selectedInspection.images.length - 1)}
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                      onClick={() => setCurrentImageIndex((i) => i < selectedInspection.images.length - 1 ? i + 1 : 0)}
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  </>
+                )}
+                {selectedInspection.images[currentImageIndex].queenDetected && (
+                  <div className="absolute bottom-2 left-2">
+                    <Badge className="text-lg">
+                      <Crown className="w-4 h-4 mr-1" />
+                      Matica zaznana
+                    </Badge>
                   </div>
+                )}
+              </div>
 
-                  {selectedInspection.images.length > 1 && (
-                    <div className="flex items-center justify-center gap-4">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))}
-                        disabled={currentImageIndex === 0}
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        {currentImageIndex + 1} / {selectedInspection.images.length}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setCurrentImageIndex(
-                          Math.min(selectedInspection.images.length - 1, currentImageIndex + 1)
-                        )}
-                        disabled={currentImageIndex === selectedInspection.images.length - 1}
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  )}
+              {selectedInspection.images[currentImageIndex].detectedIssues && (
+                <Alert variant="destructive">
+                  <AlertOctagon className="w-4 h-4" />
+                  <AlertDescription>
+                    <strong>Zaznani problemi:</strong>
+                    <ul className="mt-2 list-disc list-inside">
+                      {JSON.parse(selectedInspection.images[currentImageIndex].detectedIssues!).map((issue: string, idx: number) => (
+                        <li key={idx}>{issue}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-                  {/* AI Analysis for current image */}
-                  {selectedInspection.images[currentImageIndex].aiAnalysis && (
-                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Brain className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                        <h4 className="font-semibold">AI Analiza</h4>
-                      </div>
-                      <ScrollArea className="max-h-96">
-                        <pre className="text-sm whitespace-pre-wrap">
-                          {JSON.stringify(JSON.parse(selectedInspection.images[currentImageIndex].aiAnalysis!), null, 2)}
-                        </pre>
-                      </ScrollArea>
-                    </div>
-                  )}
-                </>
+              {selectedInspection.images[currentImageIndex].aiAnalysis && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+                    <h4 className="font-semibold">AI Analiza</h4>
+                  </div>
+                  <ScrollArea className="max-h-96">
+                    <pre className="text-sm whitespace-pre-wrap">
+                      {JSON.stringify(JSON.parse(selectedInspection.images[currentImageIndex].aiAnalysis!), null, 2)}
+                    </pre>
+                  </ScrollArea>
+                </div>
               )}
             </div>
           </DialogContent>
