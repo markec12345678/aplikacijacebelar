@@ -5,7 +5,7 @@ import ZAI from 'z-ai-web-dev-sdk'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { imageUrl } = body
+    const { imageUrl, analyzeQueen = true, analyzeDiseases = true } = body
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'URL slike je obvezen' }, { status: 400 })
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
 
     const zai = await ZAI.create()
 
-    const prompt = `Analiziraj to sliko čebeljega panja in podaj podrobno oceno. Odgovor mora biti v slovenščini in v JSON formatu s sledečo strukturo:
+    // Sestavimo prompt glede na to, kaj želimo analizirati
+    let prompt = `Analiziraj to sliko čebeljega panja in podaj podrobno oceno. Odgovor mora biti v slovenščini in v JSON formatu s sledečo strukturo:
 {
   "overallHealth": "ODLIČNO | DOBRO | SREDNJE | SLABO | KRITIČNO",
   "beePopulation": "ODLIČNA | DOBRA | SREDNJA | NIZKA",
@@ -36,12 +37,40 @@ export async function POST(request: NextRequest) {
     "seznam priporočil za cebelarja"
   ],
   "summary": "kratko povzetek analize v 1-2 stavkih"
+`
+
+    if (analyzeQueen) {
+      prompt += `,
+  "queenAnalysis": {
+    "queenSpotted": true/false,
+    "queenLocation": "opis lokacije kraljice na sliki",
+    "queenHealth": "DOBRO | POVRAČENA | NEZNANO",
+    "queenPattern": [
+      "opis vzorca čebel, ki kažejo prisotnost kraljice",
+      "npr. obroč okrog kraljice",
+      "vrstica čebel"
+    ],
+    "eggCellsVisible": true/false,
+    "broodPattern": "DOBR vzorec legla | SLAB vzorec legla | BREZ legla"
+  }`
+    } else {
+      prompt += `,
+  "queenAnalysis": null`
+    }
+
+    prompt += `
 }
 
 Pozorno preglej sliko in iskaj:
-- Znake bolezni (varroa, nosež, afrikanizirane čebele, glistačnost, itd.)
+${analyzeDiseases ? `- Znake bolezni (varroa, nosež, afrikanizirane čebele, glistačnost, itd.)` : ''}
 - Stanje čebel (število, aktivnost)
-- Znake kraljice
+${analyzeQueen ? `
+- PRISOTNOST MATICE:
+  * Išči večjo čebelo z razločnim telesom
+  * Išči čebele, ki se obnašajo občutljivo ali so sicer obrobljene
+  * Išči obroč ali vzorec čebel, ki je lahko okoli matice
+  * Išči znake razlegelih celic (jajčeca)
+  * Ocenjaj, ali je vzorec legla pravilen` : ''}
 - Stanje okvirov (čista, umazana, z medom, z leglom)
 - Katerikoli drug vidik, ki je pomemben za zdravje čebel
 `

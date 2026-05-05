@@ -23,6 +23,48 @@ model Hive {
   updatedAt       DateTime     @updatedAt
 
   inspections     Inspection[]
+  weights         Weight[]
+  scales          Scale[]
+}
+
+// Daljinska tehtnica
+model Scale {
+  id              String       @id @default(cuid())
+  name            String
+  location        String?
+  hiveId          String?      // Povezana s panjem (če je)
+  ipAddress       String?      // IP naslov tehtnice
+  port            Int?         // Vrata za povezavo
+  lastReading     DateTime?    // Zadnji uspešen branje
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  hive            Hive?        @relation(fields: [hiveId], references: [id])
+}
+
+// Uteži/tehtnice
+model Weight {
+  id              String       @id @default(cuid())
+  hiveId          String
+  hive            Hive         @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  date            DateTime     @default(now())
+
+  // Glavna teža
+  hiveWeight      Float?       // Teža panja v kg
+  honeyYield      Float?       // Ocena medila v kg
+
+  // Podrobnosti
+  framesCount     Int?         // Število okvirov
+  framesWithHoney  Int?         // Okviri z medom
+  emptyFrames     Int?         // Prazni okviri
+
+  // Dodatne informacije
+  notes           String?
+  source          String?      // "MANUAL" | "SCALE"
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 // Inspekcija panja
@@ -38,6 +80,7 @@ model Inspection {
   pollenFrames    Int?
   notes           String?
   diseases        String?           // JSON array of detected diseases
+  queenSpotted     Boolean?          // Ali je bila opažena matica
   images          InspectionImage[]
 
   createdAt       DateTime          @default(now())
@@ -52,6 +95,7 @@ model InspectionImage {
   imageUrl        String
   aiAnalysis      String?      // JSON with AI analysis results
   detectedIssues  String?      // JSON with detected issues/diseases
+  queenDetected   Boolean?     // Ali je bila matica zaznana na sliki
   createdAt       DateTime     @default(now())
 }
 
