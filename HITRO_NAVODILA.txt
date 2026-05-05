@@ -1,0 +1,116 @@
+═══════════════════════════════════════════════════════════════
+     🐝 KAKO DOBITI ČEBELARSKI POMOČNIK NA TELEFON
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+  NAJHITREJŠI NAČIN - DEPLOY NA VERCEL (BREZPLAČNO)
+═══════════════════════════════════════════════════════════════
+
+1. ▶ Odprite: https://vercel.com
+2. ▶ Naredite račun (GitHub, Google ali Email)
+3. ▶ Kliknite: "Add New..." → "Project"
+4. ▶ Izberite projekt ali uploadajte
+5. ▶ Kliknite "Deploy"
+6. ▶ Počakajte 2-3 minute
+7. ▶ Dobite URL: https://vas-projekt.vercel.app
+
+
+═══════════════════════════════════════════════════════════════
+  NAMESTITEV NA TELEFON
+═══════════════════════════════════════════════════════════════
+
+ANDROID:
+1. Odprite v Chrome: https://vas-projekt.vercel.app
+2. Kliknite ⋮ (tri pike zgoraj desno)
+3. Kliknite "Dodaj na začetni zaslon"
+4. Kliknite "Dodaj"
+
+iOS:
+1. Odprite v Safari: https://vas-projekt.vercel.app
+2. Kliknite Share (puščica navzgor na dnu)
+3. Povlecite navzdol in kliknite "Dodaj na začetni zaslon"
+4. Kliknite "Dodaj"
+
+
+═══════════════════════════════════════════════════════════════
+  ALTERNATIVNI NAČINI
+═══════════════════════════════════════════════════════════════
+
+1. BREZ GIT (Ročni upload):
+   
+   a) Namestite Vercel CLI:
+      npm i -g vercel
+   
+   b) Login:
+      vercel login
+   
+   c) Deploy:
+      cd /home/z/my-project
+      vercel --prod
+
+2. Z GIT:
+
+   a) Ustvarite GitHub repozitorij
+   b) Push-ajte projekt
+   c) Povežite z Vercel
+   d) Avtomatski deploy pri vsakem push-u
+
+
+═══════════════════════════════════════════════════════════════
+  POMEMBNO
+═══════════════════════════════════════════════════════════════
+
+✓ Imate brezplačen hosting na Vercel
+✓ Aplikacija se avtomatsko nadgradi
+✓ Deluje kot prava aplikacija na telefonu
+✓ Hitra in responzivna
+
+⚠ Zahteva internetno povezavo za:
+  - Dodajanje panjev
+  - AI analizo slik
+  - Shranjevanje inspekcij
+
+
+═══════════════════════════════════════════════════════════════
+  TEŽAVE?
+═══════════════════════════════════════════════════════════════
+
+"Deploy ni uspel:"
+  ✓ Preverite, da ste v pravi mapi
+  ✓ Zaženite: bun install
+
+"Aplikacija se ne odpira:"
+  ✓ Preverite internetno povezavo
+  ✓ Počakajte 1-2 minute
+  ✓ Osvežite stran
+
+"Ni gumba za namestitev:"
+  ✓ Uporabite Chrome (Android) ali Safari (iOS)
+  ✓ Preverite HTTPS URL
+
+
+═══════════════════════════════════════════════════════════════
+  DOKUMENTACIJA
+═══════════════════════════════════════════════════════════════
+
+Več informacij:
+  • DEPLOY_NAVODILA.md  - Podrobna navodila
+  • README.md            - O projektu
+
+
+═══════════════════════════════════════════════════════════════
+  HITRI UKAZI (ZA RAZVOJNIKE)
+═══════════════════════════════════════════════════════════════
+
+vercel login                    # Povezava z Vercel
+vercel --prod                   # Deploy na produkcijo
+vercel                         # Testni deploy
+
+
+═══════════════════════════════════════════════════════════════
+
+  🎉 USPEŠNA UPORABA! VESELIMO SE!
+
+  Narejeno z ❤️ za slovenske čebelare
+
+═══════════════════════════════════════════════════════════════
