@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,20 +10,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Panj
+model Hive {
+  id              String       @id @default(cuid())
+  name            String
+  location        String?
+  notes           String?
+  beeCount        Int?         // Število čebeljih družin
+  status          HiveStatus   @default(ACTIVE)
+  lastInspection  DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  inspections     Inspection[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Inspekcija panja
+model Inspection {
+  id              String            @id @default(cuid())
+  hiveId          String
+  hive            Hive              @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  date            DateTime          @default(now())
+  beeHealth       BeeHealth         @default(GOOD)
+  beePopulation   Int?
+  broodFrames     Int?
+  honeyFrames     Int?
+  pollenFrames    Int?
+  notes           String?
+  diseases        String?           // JSON array of detected diseases
+  images          InspectionImage[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+// Slike inspekcije
+model InspectionImage {
+  id              String       @id @default(cuid())
+  inspectionId    String
+  inspection      Inspection   @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  imageUrl        String
+  aiAnalysis      String?      // JSON with AI analysis results
+  detectedIssues  String?      // JSON with detected issues/diseases
+  createdAt       DateTime     @default(now())
+}
+
+// Bolezen - zbirka vseh bolezni
+model Disease {
+  id              String       @id @default(cuid())
+  name            String
+  nameSl          String?      // Slovensko ime
+  description     String
+  symptoms        String       // JSON array of symptoms
+  treatment       String?
+  prevention      String?
+  severity        DiseaseSeverity @default(MEDIUM)
+  imageUrl        String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+// Enums
+enum HiveStatus {
+  ACTIVE
+  INACTIVE
+  WEAK
+  SICK
+  PREPARING_WINTER
+  WINTERING
+}
+
+enum BeeHealth {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+}
+
+enum DiseaseSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
