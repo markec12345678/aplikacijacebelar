@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 // GET - Preberi vse tehtnice
 export async function GET() {
   try {
-    const scales = await db.scales.findMany({
+    const scales = await db.scale.findMany({
       include: {
         hive: true
       },
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ustvari tehtnico
-    const scale = await db.scales.create({
+    const scale = await db.scale.create({
       data: {
         name,
         location: location || null,
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Posodobi tehtnico
-    const scale = await db.scales.update({
+    const scale = await db.scale.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
@@ -93,7 +93,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID tehtnice je obvezen' }, { status: 400 })
     }
 
-    await db.scales.delete({
+    await db.scale.delete({
       where: { id }
     })
 

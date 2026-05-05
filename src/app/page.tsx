@@ -5,7 +5,8 @@ import {
   Plus, Beaker, Search, AlertTriangle, Calendar, MapPin,
   Camera, X, ChevronLeft, ChevronRight, Loader2, Brain,
   Activity, TrendingUp, ShieldCheck, AlertOctagon,
-  Crown, Scale, BarChart3, RefreshCw, Database, Weight, Thermometer, Droplets
+  Crown, Scale, BarChart3, RefreshCw, Database, Weight, Thermometer, Droplets,
+  CheckCircle2, Clock, Zap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -159,6 +160,12 @@ export default function BeekeeperApp() {
 
   const [activeTab, setActiveTab] = useState('hives')
   const [weightDays, setWeightDays] = useState(30)
+
+  // Workflow state
+  const [workflowRunning, setWorkflowRunning] = useState(false)
+  const [workflowStep, setWorkflowStep] = useState('')
+  const [workflowResult, setWorkflowResult] = useState<any>(null)
+  const [showWorkflowResult, setShowWorkflowResult] = useState(false)
 
   // Pridobi panje
   const fetchHives = async () => {
@@ -362,6 +369,65 @@ export default function BeekeeperApp() {
       console.error('Napaka pri analizi slike:', error)
     } finally {
       setAnalyzingImage(false)
+    }
+  }
+
+  // Popoln workflow: poslikaj → analiziraj → shrani → priporočila
+  const runCompleteWorkflow = async () => {
+    if (!selectedHive || !capturedImage) return
+
+    setWorkflowRunning(true)
+    setWorkflowStep('Analiziranje slike z AI...')
+
+    try {
+      const res = await fetch('/api/workflow/inspection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hiveId: selectedHive.id,
+          imageUrl: capturedImage,
+          analyzeQueen: true,
+          analyzeDiseases: true,
+          additionalData: {
+            beePopulation: newInspection.beePopulation ? parseInt(newInspection.beePopulation) : null,
+            broodFrames: newInspection.broodFrames ? parseInt(newInspection.broodFrames) : null,
+            honeyFrames: newInspection.honeyFrames ? parseInt(newInspection.honeyFrames) : null,
+            pollenFrames: newInspection.pollenFrames ? parseInt(newInspection.pollenFrames) : null
+          }
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          setWorkflowResult(data.data)
+          setShowWorkflowResult(true)
+
+          // Osveži podatke
+          await fetchHives()
+          await fetchInspections(selectedHive.id)
+
+          // Reset stanja
+          setShowInspectionDialog(false)
+          setCapturedImage(null)
+          setAiAnalysis(null)
+          setNewInspection({
+            beeHealth: 'GOOD',
+            beePopulation: '',
+            broodFrames: '',
+            honeyFrames: '',
+            pollenFrames: '',
+            notes: '',
+            queenSpotted: false
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Napaka pri workflowu:', error)
+      alert('Napaka pri izvajanju workflowa')
+    } finally {
+      setWorkflowRunning(false)
+      setWorkflowStep('')
     }
   }
 
@@ -1354,17 +1420,55 @@ export default function BeekeeperApp() {
                       </Button>
                     </div>
 
-                    {!aiAnalysis && !analyzingImage && (
-                      <Button onClick={analyzeImage} className="w-full gap-2">
-                        <Brain className="w-5 h-5" />
-                        Analiziraj sliko z AI
-                      </Button>
+                    {!aiAnalysis && !analyzingImage && !workflowRunning && (
+                      <div className="space-y-3">
+                        <Button onClick={runCompleteWorkflow} className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700">
+                          <Zap className="w-5 h-5" />
+                          Hitra inspekcija (AI + shranjevanje)
+                        </Button>
+                        <div className="text-center text-sm text-muted-foreground">- ali -</div>
+                        <Button onClick={analyzeImage} variant="outline" className="w-full gap-2">
+                          <Brain className="w-5 h-5" />
+                          Samo analiziraj sliko
+                        </Button>
+                      </div>
                     )}
 
                     {analyzingImage && (
                       <div className="flex items-center justify-center gap-3 py-4">
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span>Analiza slike v teku...</span>
+                      </div>
+                    )}
+
+                    {workflowRunning && (
+                      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+                          <div>
+                            <h4 className="font-semibold text-amber-900 dark:text-amber-100">Workflow v teku</h4>
+                            <p className="text-sm text-muted-foreground">Avtomatizirana analiza in shranjevanje</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span className="text-sm">Slika zajeta</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+                            <span className="text-sm">{workflowStep}</span>
+                          </div>
+                          <div className="flex items-center gap-3 opacity-50">
+                            <Clock className="w-5 h-5" />
+                            <span className="text-sm">Shranjevanje rezultatov...</span>
+                          </div>
+                          <div className="flex items-center gap-3 opacity-50">
+                            <ShieldCheck className="w-5 h-5" />
+                            <span className="text-sm">Generiranje priporočil...</span>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -1649,6 +1753,274 @@ export default function BeekeeperApp() {
                 </div>
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Workflow Result Dialog */}
+      {showWorkflowResult && workflowResult && (
+        <Dialog open={showWorkflowResult} onOpenChange={setShowWorkflowResult}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                Workflow Zaključen
+              </DialogTitle>
+              <DialogDescription>
+                Pregled rezultatov avtomatizirane analize in priporočil
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Summary */}
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <h4 className="font-semibold">Povzetek</h4>
+                </div>
+                <p className="text-sm">{workflowResult.analysis?.summary || 'Analiza končana'}</p>
+              </div>
+
+              {/* Health Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Stanje zdravja</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Splošno zdravje:</span>
+                      <Badge className="ml-2" variant={
+                        workflowResult.analysis?.overallHealth === 'ODLIČNO' || workflowResult.analysis?.overallHealth === 'DOBRO' ? 'default' : 'destructive'
+                      }>
+                        {workflowResult.analysis?.overallHealth}
+                      </Badge>
+                    </div>
+                    {workflowResult.analysis?.healthScore && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Ocena:</span>
+                        <span className="ml-2 font-bold">{workflowResult.analysis.healthScore}/100</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {workflowResult.analysis?.observations && workflowResult.analysis.observations.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="font-medium mb-2">Opazki</h5>
+                      <ul className="text-sm space-y-1">
+                        {workflowResult.analysis.observations.map((obs: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <TrendingUp className="w-4 h-4 mt-0.5 text-amber-600" />
+                            {obs}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Queen Status */}
+              {workflowResult.analysis?.queenAnalysis && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-600" />
+                      Analiza matice
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-sm text-muted-foreground">Prisotnost:</span>
+                        <Badge className="ml-2" variant={workflowResult.analysis.queenAnalysis.queenSpotted ? 'default' : 'secondary'}>
+                          {workflowResult.analysis.queenAnalysis.queenSpotted ? 'Zaznana' : 'Nezaznana'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground">Zdravje:</span>
+                        <Badge className="ml-2">
+                          {workflowResult.analysis.queenAnalysis.queenHealth}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {workflowResult.analysis.queenAnalysis.queenSpotted && (
+                      <>
+                        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Lokacija:</span>
+                            <span className="ml-2 font-medium">{workflowResult.analysis.queenAnalysis.queenLocation}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Vzorec legla:</span>
+                            <span className="ml-2 font-medium">{workflowResult.analysis.queenAnalysis.broodPattern}</span>
+                          </div>
+                        </div>
+                        {workflowResult.analysis.queenAnalysis.broodPattern === 'SLAB VZOREC LEGLA' && (
+                          <Alert className="mt-4">
+                            <AlertOctagon className="w-4 h-4" />
+                            <AlertDescription>
+                              Zaznan slab vzorec legla! Preverite prisotnost matice in razmislite o zamenjavi.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
+                    )}
+
+                    {!workflowResult.analysis.queenAnalysis.queenSpotted && (
+                      <Alert className="mt-4" variant="destructive">
+                        <AlertOctagon className="w-4 h-4" />
+                        <AlertDescription>
+                          Matica NI bila zaznana! To je znak šibkega panja. Preverite prisotnost matice in razmislite o zamenjavi ali dodajanju novih ličink.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Diseases */}
+              {workflowResult.recommendations?.detectedDiseases && workflowResult.recommendations.detectedDiseases.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <AlertOctagon className="w-5 h-5 text-red-600" />
+                      Zaznane bolezni
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {workflowResult.recommendations.detectedDiseases.map((disease: any, idx: number) => (
+                      <Alert key={idx} variant={disease.severity === 'kritična' ? 'destructive' : 'default'}>
+                        <AlertDescription>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <strong>{disease.name}</strong>
+                              <Badge variant="outline">{disease.probability}</Badge>
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Nujnost:</span>
+                              <span className="ml-2">{disease.urgency}</span>
+                            </div>
+                            {disease.detectedSymptoms && disease.detectedSymptoms.length > 0 && (
+                              <ul className="list-disc list-inside text-sm">
+                                {disease.detectedSymptoms.map((symptom: string, sidx: number) => (
+                                  <li key={sidx}>{symptom}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recommendations */}
+              {workflowResult.recommendations && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-green-600" />
+                      Priporočila
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Urgent Actions */}
+                    {workflowResult.recommendations.urgentActions && workflowResult.recommendations.urgentActions.length > 0 && (
+                      <div>
+                        <h5 className="font-medium mb-2 flex items-center gap-2">
+                          <AlertOctagon className="w-4 h-4 text-red-600" />
+                          Nujni ukrepi
+                        </h5>
+                        <div className="space-y-2">
+                          {workflowResult.recommendations.urgentActions.map((action: any, idx: number) => (
+                            <div key={idx} className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-medium">{action.action}</span>
+                                <Badge variant="destructive" className="text-xs">{action.deadline}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Scheduled Actions */}
+                    {workflowResult.recommendations.scheduledActions && workflowResult.recommendations.scheduledActions.length > 0 && (
+                      <div>
+                        <h5 className="font-medium mb-2 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-600" />
+                          Načrtovani ukrepi
+                        </h5>
+                        <div className="space-y-2">
+                          {workflowResult.recommendations.scheduledActions.map((action: any, idx: number) => (
+                            <div key={idx} className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-medium">{action.action}</span>
+                                <Badge variant="outline" className="text-xs">{action.deadline}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Future Actions */}
+                    {workflowResult.recommendations.futureActions && workflowResult.recommendations.futureActions.length > 0 && (
+                      <div>
+                        <h5 className="font-medium mb-2 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-blue-600" />
+                          Prihodnji ukrepi
+                        </h5>
+                        <div className="space-y-2">
+                          {workflowResult.recommendations.futureActions.map((action: any, idx: number) => (
+                            <div key={idx} className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-medium">{action.action}</span>
+                                <Badge variant="outline" className="text-xs">{action.deadline}</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* General Recommendations */}
+                    {workflowResult.recommendations.generalRecommendations && workflowResult.recommendations.generalRecommendations.length > 0 && (
+                      <div>
+                        <h5 className="font-medium mb-2">Splošna priporočila</h5>
+                        <ul className="text-sm space-y-1">
+                          {workflowResult.recommendations.generalRecommendations.map((rec: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <ShieldCheck className="w-4 h-4 mt-0.5 text-green-600" />
+                              {rec}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Hive Status Update */}
+              {workflowResult.hive && (
+                <Alert>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <AlertDescription>
+                    Status panja je bil posodobljen na: <strong>{workflowResult.hive.status}</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setShowWorkflowResult(false)}>
+                Razumem
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
